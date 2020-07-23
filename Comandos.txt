@@ -1,0 +1,515 @@
+-- Gerenciar Containers -----------------------------------------------------------------------
+
+docker container run <image> <comando>
+docker container run -it <image> <comando>
+docker container start <container_ID>
+docker container exec <container_ID> <comando>
+docker container stop <container_ID>  (Para um determinado container)
+docker container run --name <nome> <image>
+docker container rm <container_ID>  (Apaga um determinado container)
+docker container prune  (Apaga todos os containers existentes)
+docker container ls
+docker container ls -a
+docker container inspect cont3   (Inspeciona um determinado container)
+
+docker exec -i -t cont5 /bin/bash   (Execute um comando no contêiner cont5 em execução para obter um Shell(bash))
+
+docker container run --name teste --rm -it alpine:3.8   (Cria um container iterativo baseado na imagem do alpine e exclue o mesmo assim que sair dele)
+docker container create alpine:3.8  (Cria um contêiner com base na imagem oficial do alpine:3.8)
+docker container run --name cont1 alpine:3.8   (Cria um contêiner chamado cont1 com base na imagem oficial do alpine:3.8)
+docker container -it --name cont2 alpine:3.8
+	#> echo 'teste' > teste.txt
+	#>ls -g
+	#>exit        (Crie um contêiner no modo iterativo (-it) chamado cont2 com base na imagem oficial do alpine:3.8. A seguir emita o comando echo ‘teste’ > 			      teste.txt e a seguir o comando ls -g)
+
+docker container exec b704b9cbb794 ls -l
+docker container exec b704b9cbb794 ls -l /usr/share/nginx/   listar todas as pastas e arquivos do container ou determinada pasta
+
+
+-- Gerenciar Imagens -----------------------------------------------------------------------
+
+docker images
+docker image pull redis  (Baixa a imagem redis na ultima versão, latest)
+docker image pull redis:1.0  (Baixa a imagem redis com a tag 1.0)
+docker image inspect juliano/img:1.0  (Inspeciona a imagem juliano na tag 1.0)
+docker image inspect juliano/img:1.0   (Exibe um histórico da imagem)
+docker image tag redis:latest redis:mac  (Cria um álias de uma imagem já existente, nesse caso cria um alias de nome mac da imagem redis:latest)
+docker image build  (cria uma imagem a partir de um Dockerfile)
+docker image rm $(docker image ls -a -q)  (Apaga todas as imagens - passa como parametro para o comando uma lista de imagens -a lista todas as imagens)
+docker image tag image_atual <imagem>  (Associar um nome a uma imagem)
+docker image push <imagem>	(Envia uma imagem ao repositório)
+docker images -q	(exibir apenas os ids das imagens)
+
+
+-- Mapeamento de portas -----------------------------------------------------------------------
+
+docker container run --name ws1 -p 8080:80 nginx
+docker container run --name ws1 -p 8080:80 -d nginx
+	run - cria o container
+	--name ws1 - especifica o nome do container
+	-p 8080:80 - especifica a porta que estamos expondo
+	nginx - nome da imagem obtida do repositório
+	-d - executa em segundo plano e libera o terminal
+docker container start ws1     (Inicia o contêiner cont3 criado no item anterior)
+	
+	
+-- Mapeamento de diretórios -----------------------------------------------------------------------
+
+docker container run --name ws2 -p 8080:80 -v /$(pwd)/html:/usr/share/nginx/html -d nginx
+docker container run --name ws2 -p 8080:80 -v //c//trabalho//projetosjuliano//diarios//arquitetura/
+/docker//testes//html:/usr/share/nginx/html -d nginx
+	run - cria o container
+	--name ws2 - especifica o nome do container
+	-p 8080:80 - especifica a porta que estamos expondo
+	-v - volume
+	/$(pwd)/html:/usr/share/nginx/html - mapeamento da pasta do host para a pasta do container
+	-d - executa em segundo plano e libera o terminal
+	nginx - nome da imagem obtida do repositório
+	Obs: importante que no caminho do path não tenha o : (dois pontos), pois ele é reservado para os mapeamentos
+	
+	
+-- Gerenciar Volumes -------------------------------------------------------------------------------
+
+docker volume create volumeteste  (Cria um volume com nome de volumeteste)
+	
+
+
+-- Criar Docker Container .net core -----------------------------------------------------------------------
+
+docker container run --name demonet -it microsoft/dotnet:2.1-sdk
+
+Após entrar no container: dotnet new (lista todos os projeots possíveis para se criar)
+			  mkdir demo (cria uma pasta chamada demo)
+			  cd demo (entra na pasta demo criada)
+			  dotnet new console (cria um novo projeto do tipo console)
+			  ls -g (lista os arquivos dentro da pasta criada)
+			  dotnet build (compila o projeto criado)
+			  dotnet run (executa o projeto)
+			  exit (sair do container)
+
+docker container start -ia demonet  (vai executar novamento o container - i(iterativo) a(attach))
+
+-- Obter informações do contêiner cont3 como: uso de cpu, de memória, I/O, etc -----------------------------------------------------
+
+docker container stats cont3
+CONTAINER - ID do Container
+CPU % - uso de CPU em porcentagem
+MEM USAGE / LIMIT - Memória usada/Limite que você pode ter setado
+MEM - uso de memória em porcentagem
+NET I/O - I/O de Internet
+BLOCK IO - Outros processos de I/O.
+
+-- Criar uma imagem usando o comando build depois de já ter um Dockerfile -----------------------------------------------------
+
+docker build -t juliano/img:1.0 .
+	docker build (Comando que constroi a imagem)
+	-t  (Informa que a imagem pertence ao meu usuário)
+	juliano/img:1.0  (O nome da imagem e a Tag atribuída à imagem)
+	.   (Significa o diretório atual, no caso a pasta onde está o Dockerfile)
+
+docker container run -d -p 8080:80 --name ws1 juliano/img:1.0    (Comando para criar o container baseado na imagem juliano)
+	-d - executa em segundo plano e libera o terminal
+	-p 8080:80 - especifica a porta que estamos expondo
+	--name ws1 - especifica o nome do container
+	juliano/img:1.0 - imagem que será utilizada
+
+	
+-- Criar imagem para aplicacao Asp Net Core criada	-----------------------------------------------------
+	
+	dotnet new mvc  - Cria projeto MVC
+	dotnet build    - Build da aplicação
+	dotnet run 		- Executa a aplicação
+	dotnet publish --configuration Release --output dist  - Publica a aplicação a aplicação na pasta dist na raiz do projeto
+	
+	--Dockerfile para a criação da imagem	
+	FROM microsoft/dotnet:3.1-aspnetcore-runtime						- Definir imagem base
+	LABEL version="1.0.1" description="Aplicacao ASP .NET Core MVC"		- Definir informações para a imagem
+	COPY dist /app														- Copiar os arquivos da pasta dist para uma pasta do container (/app)
+	WORKDIR /app														- Definir a pasta de trabalho (/app)
+	EXPOSE 80/tcp														- Expor a porta do container e definir em qual porta o servidor vai atender
+	ENTRYPOINT ["dotnet","mvc1.dll"]									- Definir o ponto de entrada da aplicação
+	
+docker build -t aspnetcoremvc/app1:1.0 .	
+	-t  (Informa que a imagem pertence ao meu usuário)
+	aspnetcoremvc/app1:1.0  (O nome da imagem e a Tag atribuída à imagem)
+	.   (Significa o diretório atual, no caso a pasta onde está o Dockerfile)
+	
+docker container create -p 3000:80 --name mvcprodutos aspnetcoremvc/app1:1.0 	
+docker container start mvcprodutos
+
+-- Publicar imagens no Docker Hub -----------------------------------------------------------------------
+
+docker image tag aspnetcoremvc/app1:1.0 julianoalm/mvcprodutos:1.0
+		aspnetcoremvc/app1:1.0   - Imagem que quero subir para o DockerHub, nome e tag da imagem
+		julianoalm				 - Usuário do DockerHub
+		mvcprodutos:1.0			 - Nome e Tag que da imagem após subí-la
+		
+docker login -u julianoalm		- Fazer login no Docker Hub
+
+docker image push julianoalm/mvcprodutos:1.0
+	push  					 - Envia a imagem
+	julianoalm				 - Usuário do DockerHub
+	mvcprodutos:1.0			 - Nome e Tag que da imagem após subí-la
+
+
+-- Definir um arquivo Dockerfile para criar uma imagem chamada appnetcore:dev para uma aplicação console -------------------------
+
+Arquivo Dockerfile criado na raiz do projeto.
+ 
+FROM microsoft/dotnet:2.1-sdk									- define a imagem base 
+WORKDIR /app													- define o diretório de trabalho no contêiner
+COPY *.csproj ./												- copia o arquivo csproj e restaura as camadas 
+RUN dotnet restore												- restaura as dependências do projeto 
+COPY . ./														- copia tudo da pasta atual para o contêiner 
+RUN dotnet publish -c Release -o out							- executa o comando que publica o projeto na pasta out 
+ENTRYPOINT ["dotnet", "out/appnetcorex1.dll"]					- executa o comando dotnet no arquivo do projeto na pasta out
+
+docker built -t appnetcore:dev .								- Cria a imagem a partir do Dockerfile
+docker built -t appnetcore:dev -f Dockerfile.dev .				- O argumento -f permite informar uma localização e nome alternativos para o Dockerfile
+
+docker container run --name testeapp appnetcore:dev 'Curso Docker'	- cria um contêiner chamado testeapp com a imagem criada
+
+
+-- Mais exemplo de criação de uma imagem a partir de um arquivo Dockefile ------------------------------------
+
+FROM node								- Usa uma imagem do node a partir do docker hub
+WORKDIR /usr/src/app					- Define qual diretório será usado para nossa aplicação no container
+COPY package*.json ./					- Copia todos os arquivos que começam com package e tem extensão .json para a pasta WORKDIR
+RUN npm install							- Instala todas as dependências declaradas no package.json
+COPY . .								- Copia todos os arquivos da raiz da nossa aplicação para a pasta definida no WORKDIR
+EXPOSE 3000								- Expõe a porta 3000 do container
+CMD [ "npm", "start" ]					- Roda o comando 'npm start'
+
+docker image build -t <imagem> .								- Cria a imagem
+docker container run -p 4000:3000 -d --name teste <imagem>		- Cria o Container a partir da imagem acima
+
+
+-- Criar volume: Data base MySql ------------------------------------------------------------------------------
+
+docker volume create dadosdb           - Cria um volume com o nome de dadosdb
+docker image pull mysql:5.7			   - Baixa uma imagem do my sql na versão 5.7
+docker image inspect mysql:5.7		   - Inspeciona a imagem mysql:5.7, no campo  "Volumes": ele exibe o local onde a imagem utiliza como volume
+
+docker container run -d --name mysql -v dadosdb:/var/lib/mysql -e MYSQL_ROOT_PASSWORD=numsey mysql:5.7
+-d								- executa em segundo plano e libera o terminal
+--name mysql 					- nomeia o container
+-v dadosdb:/var/lib/mysql		- mapeamento da pasta do host para a pasta do container (a pasta do host foi criada no comando de create acima)
+-e MYSQL_ROOT_PASSWORD=numsey	- define uma senha para o mysql
+mysql:5.7						- nome e tag da imagem
+
+docker container exec -it mysql /bin/bash
+	docker container exec -it mysql				- executa o coantainer mysql de forma iterativa 
+	/bin/bash									- habilita o terminal de comandos do container
+	
+mysql -u root -p								- já dentro do terminal do container, -u é o usuario e -p a senha
+show databases;									- exibe os bancos do container
+create database juliano;						- cria um banco com o nome juliano	
+
+	
+dotnet ef migrations add Inicial				- Cria os migrations do projeto .Net Core
+
+docker container run -d --name mysql -v produtosdata:/var/lib/mysql -e MYSQL_ROOT_PASSWORD=numsey -e bind-addres=0.0.0.0 mysql:5.7
+-e bind-addres=0.0.0.0    			- determina que o container pode ser acessado de qualquer lugar
+
+docker container logs mysql			- visualiza os logs do container do MySql
+
+dotnet publish --configuration Release --output dist  - Publica a aplicação
+
+docker image build -t produtosmvc/app:2.0 .				- Cria a imagem a partir do Dockerfile
+	-t  (Informa que a imagem pertence ao meu usuário)
+	produtosmvc/app:2.0  (O nome da imagem e a Tag atribuída à imagem)
+	.   (Significa o diretório atual, no caso a pasta onde está o Dockerfile)
+
+docker network inspect bridge 		- descobre o ip dos containers da rede interna do docker. Cada container terá um IP
+
+docker container run -d --name appmvc -p 3000:80 -e DBHOST=172.17.0.2 produtosmvc/app:2.0   
+	-e DBHOST=172.17.0.2					- variável de ambiente com o IP do container do banco de dados mysql
+	
+docker container logs appmvc					- verificar os logs do container appmvc	
+docker container exec -it mysql bash	    	- entrar no container do banco mysql
+mysql -u root -p								- já dentro do terminal do container, -u é o usuario e -p a senha
+show databases;									- exibe os bancos do container
+use produtosdb;									- entra no banco de dados
+show tables;									- exibe as tabelas do banco
+select * from Produtos;							- seleciona os itens da tabela Produtos
+	
+-- 	Redes -------------------------------------------------------------------------------------------------------
+
+docker network ls					- Lista as redes padrões do Docker
+docker network inspect bridge		- Inspeciona a rede atual
+
+docker network create --driver bridge redealpine	- Cria uma rede customizada 
+	--driver bridge									- dirver da rede 
+	redealpine										- Nome da rede
+	
+docker container run -it --name alp1 --network redealpine alpine		- Cria um container e especifica que ele usará a rede "redealpine"
+	hostname -i															- De dentro do container, descobre o ip dele
+	
+docker container run -it --name alp2 --network redealpine alpine		- Cria o segundo container para a rede "redealpine"
+ping alp1																- De dentro do container alp2 ele consegue pingar o alp1 pois esta na mesma rede
+
+docker container run -it --name alp3  alpine							- Cria um container na rede padrao, não na rede "redealpine"
+docker network connect redealpine alp3									- Adiciona o container alp3 na rede "redealpine"
+
+-- Escalando aplicação --------------------------------------------------------------------------------------------
+
+-Dois container criados, como não foi especificado uma rede customizada, eles estão na rede padrão (bridge)
+-Assim para escalar aplicações, basta criar os containers na mesma rede e com portas diferentes
+docker container run -d --name appmvc -p 3000:80 -e DBHOST=172.17.0.2 produtosmvc/app:2.0 			- Cria o primeiro container
+docker container run -d --name appmvc2 -p 3500:80 -e DBHOST=172.17.0.2 produtosmvc/app:2.0   		- Cria o segundo container
+	-e DBHOST=172.17.0.2		- variável de ambiente com o IP do container do banco de dados mysql
+
+	
+-- Usando redes customizadas ------------------------------------------------------------------------------------
+
+docker container rm -f $(docker ps -aq)					- Para e remove todos os containers
+
+docker network create frontend							- Cria a primeira rede chamada de frontend
+docker network create backend							- Cria a primeira rede chamada de backend
+
+docker container run -d --name mysql -v produtosdata:/var/lib/mysql --network backend -e MYSQL_ROOT_PASSWORD=numsey -e bind-address=0.0.0.0 mysql:5.7			- Cria o primeiro container do banco de dados utilizando a rede backend.
+
+docker container create --name mvcapp1 -e DBHOST=mysql --network backend produtosmvc/app:2.0			- Cria o primeiro container
+docker container create --name mvcapp2 -e DBHOST=mysql --network backend produtosmvc/app:2.0			- Cria o segundo container
+docker container create --name mvcapp3 -e DBHOST=mysql --network backend produtosmvc/app:2.0			- Cria o terceiro container
+
+docker network connect frontend mvcapp1			- Conecta o primeiro container na rede frontend
+docker network connect frontend mvcapp2			- Conecta o segundo container na rede frontend
+docker network connect frontend mvcapp3			- Conecta o terceiro container na rede frontend
+
+docker container start mvcapp1 mvcapp2 mvcapp3			- Inicia os 3 containers
+
+-- Cria um balanceador para balancear as requisições dos 3 containers
+
+- criar um arquivo de nome haproxy.cfg no diretorio raiz do projeto com as seguintes configurações:
+defaults
+        timeout connect 5000
+        timeout client  50000
+        timeout server  50000
+
+frontend localnodes
+        bind *:80
+        mode http
+        default_backend mvc
+
+backend mvc
+        mode http
+        balance roundrobin
+        server mvc1 mvcapp1:80
+        server mvc2 mvcapp2:80
+        server mvc3 mvcapp3:80	
+		
+docker container run -d --name loadbalancer --network frontend -v "//c//trabalho//projetosjuliano//diarios//arquitetura//docker//testes//projetos//mvc1//haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg" -p 3200:80 haproxy:1.7.0				- Cria um container para o load balancer
+		
+		
+-- Docker Compose -------------------------------------------------------------------------------------------------
+
+dotnet publish --configuration Release --output dist  - Publica a aplicação a aplicação na pasta dist na raiz do projeto
+
+docker-compose --version 		- Verifica a versão do Docker compose
+
+docker volume rm $(docker volume ls -q)					- Remove todos os volumes 
+docker container rm -f $(docker container ls -a -q)		- Para e remover todos os containers
+docker network rm $(docker network ls -q)				- Remove todas as redes customizadas
+
+- Roteiro básico de um Docker Compose ------
+
+1- Definir um ambiente necessário para a sua aplicação funcionar utilizando um Docker File
+2- Criar o arquivo de composição (.yml) definindo quais serviços são essenciais para sua aplicação e relacionamentos entre eles
+3- Processar o arquivo de composição executando o comando docker-compose para que seu ambiente seja criado e configurado
+
+Conteúdo do arquivo docker-compose.yml criado na raiz do projeto
+
+version: "3"
+
+volumes:
+      produtosdata:
+
+networks:
+       frontend:
+       backend:
+
+services:
+
+      mysql:
+        image: "mysql:5.7"
+        volumes:
+          - produtosdata:/var/lib/mysql
+          - ./_MySQL_Init_Script:/docker-entrypoint-initdb.d
+        networks:
+          - backend
+        environment:
+          - MYSQL_ROOT_PASSWORD=numsey
+          - bind-address=0.0.0.0
+      
+      mvc:
+        build :
+         context : .
+         dockerfile : Dockerfile
+        networks :
+         - backend 
+         - frontend
+        ports:
+         - 5000:80
+        environment :
+         - DBHOST=mysql
+        depends_on :
+         - mysql  
+
+Descição dos comandos:
+build :										Indica o inicio da seção build que diz ao Docker como criar a imagem para o container
+context : .									Define o diretoriodo contextoque será usado para criar a imagem. O '.' informa que vai usar o diretorio raiz do projeto
+dockerfile : Dockerfile						Especifica o arquivo Dockefile usado para criar a imagem
+networks :									Especifica as redes que o container irá acessar. A backend para se conectar no banco e a frontend para a aplicação
+- backend 
+- frontend
+ports:										Define o mapeamento das portas que serão aplicadas ao container. Neste caso, porta 5000 no host e 80 no container
+- 5000:80
+environment :
+- DBHOST=mysql								Define o nome do host
+depends_on :								Diz ao Docker a ordem na qual os containers serão criados. Aqui o container mysql será criado antes do mvc1
+- mysql
+
+
+
+docker-compose -f docker-compose.yml build
+-f 					- Especifica o nome do arquivo de composição
+build				- Compila o arquivo Compose		
+
+docker-compose up		- Processa o arquivo compose
+docker compose down		- Para o arquivo compose, se colocar --volumes na frente do comando ele exclui o volume também
+docker-compose logs		- Lista os logs da instalação
+
+docker container start mvc1_mysql_1				- Inicia o container do mysql
+docker container exec -it mvc1_mysql_1 bash		- Executa de modo iterativo o container do mysql
+mysql -uroot -p									- Digita a senha do banco para acessar
+show databases;									- Exibe os bancos no servidor mysql
+use produtosdb;									- Seleciona o banco produtosdb
+show tables;									- Exibe as tabelas do banco
+select * from Produtos;							- Select na tabela Produtos
+
+docker-compose down -v							- Desfaz toda a operação que o comando up fez e ainda remove o volume devido ao -v
+
+dotnet publish --configuration Release --output dist  - Publica a aplicação na pasta dist
+
+
+-- Fazer Deploy no container -----------------------------------------------------------------------------
+
+Criar o arquivo Dockerfile.dev na raiz do projeto
+
+FROM mcr.microsoft.com/dotnet/core/sdk:3.1				- Criar a imagem padrão
+RUN mkdir /app											- Criar uma pasta app no container			
+WORKDIR /app											- Tornar essa pasta app padrão
+COPY mvc1.csproj .										- Copiar o arquivo de projeto para essa pasta app
+RUN dotnet restore										- Reaturar todas as dependencias Nuget do projeto no container
+COPY . .												- Copiar tudo do projeto para o container
+RUN dotnet publish -c Release -o dist					- Publicar o projeto na pasta dist do container
+EXPOSE 80/tcp											- Expor a porta 80 do container
+CMD ["dotnet", "dist/mvc1.dll"]							- Comando dotnet para executar a aplicação. Tem o mesmo efeito do ENTRYPOINT
+
+Criar o arquivo docker-compose-dev.yml na raiz do projeto
+
+version: "3"
+
+volumes:
+      produtosdata:
+
+networks:
+       backend:
+
+services:
+
+      mysql:
+        image: "mysql:5.7"
+        volumes:
+          - produtosdata:/var/lib/mysql
+          - ./_MySQL_Init_Script:/docker-entrypoint-initdb.d
+        networks:
+          - backend
+        environment:
+          - MYSQL_ROOT_PASSWORD=numsey
+          - bind-address=0.0.0.0
+
+      mvc:
+        build :
+         context : .
+         dockerfile : Dockerfile.dev
+        networks :
+         - backend 
+        ports:
+         - 5000:80
+        environment :
+         - DBHOST=mysql
+         - ASPNETCORE_ENVIRONMENT=Development
+        depends_on :
+         - mysql 
+
+
+docker-compose -f docker-compose-dev.yml -p dev build		- O argumento -f permite informar uma localização e nome alternativos para o arquivo
+docker-compose -f docker-compose-dev.yml -p dev up mvc		- O argumento mvc no final é o serviço criado no docker-compose-dev
+
+-- Multi Stage Build ------------------------------------------------------------------------------------
+
+Criar um Dockerfile.multi na raiz do projeto
+
+#estagio 1 - base
+FROM mcr.microsoft.com/dotnet/core/aspnet:3.1 AS base
+RUN mkdir /app
+WORKDIR /app 
+EXPOSE 80/tcp
+
+#estagio 2 - publish
+FROM mcr.microsoft.com/dotnet/core/sdk:3.1 AS publish
+WORKDIR /app 
+COPY mvc1.csproj .
+RUN dotnet restore
+COPY . .
+RUN dotnet publish -c Release -o dist
+
+#estagio 3 - final
+FROM base AS final
+WORKDIR /dist
+COPY --from=publish /app/dist .
+ENTRYPOINT [ "dotnet", "mvc1.dll" ]
+
+Criar um docker-compose-multi.yml na raiz do projeto
+
+version: "3"
+
+volumes:
+      produtosdata:
+
+networks:
+       backend:
+
+services:
+
+      mysql:
+        image: "mysql:5.7"
+        volumes:
+          - produtosdata:/var/lib/mysql
+          - ./_MySQL_Init_Script:/docker-entrypoint-initdb.d
+        networks:
+          - backend
+        environment:
+          - MYSQL_ROOT_PASSWORD=numsey
+          - bind-address=0.0.0.0
+
+      mvc:
+        build :
+         context : .
+         dockerfile : Dockerfile.multi
+        networks :
+         - backend 
+        ports:
+         - 5000:80
+        environment :
+         - DBHOST=mysql
+        depends_on :
+         - mysql 
+
+
+docker-compose -f docker-compose-multi.yml -p multi build			- O argumento -f permite informar uma localização e nome alternativos para o arquivo. O -p determina um prefixo para a imagem e containers
+
+docker-compose -f docker-compose-multi.yml -p multi up mvc		- O argumento mvc no final é o serviço criado no docker-compose-multi. O -p determina um prefixo para a imagem e containers
+
